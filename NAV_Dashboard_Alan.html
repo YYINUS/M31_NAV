@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PLF Deployment Wallet — NAV</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Segoe UI',system-ui,Arial,sans-serif;background:#f4f6f9;color:#111827;padding:28px;min-height:100vh}
+
+    /* Header */
+    .hdr{background:linear-gradient(135deg,#0f172a 0%,#1e3a5f 100%);color:#fff;padding:22px 28px;border-radius:14px;margin-bottom:22px;display:flex;justify-content:space-between;align-items:center}
+    .hdr-left h1{font-size:20px;font-weight:700;letter-spacing:-.3px}
+    .hdr-left .sub{font-size:11px;color:#94a3b8;font-family:'Courier New',monospace;margin-top:4px}
+    .hdr-right{display:flex;align-items:center;gap:14px}
+    .ts{font-size:11px;color:#94a3b8;text-align:right;line-height:1.5}
+    .btn{background:#3b82f6;color:#fff;border:none;padding:8px 18px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;letter-spacing:.2px;transition:background .15s}
+    .btn:hover:not(:disabled){background:#2563eb}
+    .btn:disabled{background:#60a5fa;cursor:not-allowed}
+
+    /* Summary cards */
+    .cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
+    .card{background:#fff;border-radius:12px;padding:18px 20px;box-shadow:0 1px 3px rgba(0,0,0,.07),0 1px 2px rgba(0,0,0,.04)}
+    .card-lbl{font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:.6px;margin-bottom:7px;font-weight:500}
+    .card-val{font-size:24px;font-weight:700;line-height:1;color:#111827}
+    .card-val.primary{color:#1d4ed8;font-size:28px}
+    .card-sub{font-size:11px;color:#9ca3af;margin-top:6px}
+
+    /* Protocol sections */
+    .sec{background:#fff;border-radius:12px;padding:20px 24px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,.07),0 1px 2px rgba(0,0,0,.04)}
+    .sec-hdr{display:flex;align-items:center;gap:10px;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid #f3f4f6}
+    .sec-ttl{font-size:15px;font-weight:700;color:#111827}
+    .chip{font-size:10px;padding:3px 9px;border-radius:20px;font-weight:600;letter-spacing:.3px}
+    .chip-base{background:#dbeafe;color:#1d4ed8}
+    .chip-eth{background:#ede9fe;color:#6d28d9}
+    .sec-nav{margin-left:auto;font-size:16px;font-weight:700;color:#1d4ed8}
+
+    /* Table */
+    table{width:100%;border-collapse:collapse;font-size:13px}
+    th{text-align:left;padding:0 10px 10px;color:#9ca3af;font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:.4px}
+    th.r,td.r{text-align:right}
+    td{padding:11px 10px;border-top:1px solid #f9fafb;vertical-align:middle}
+    tr:first-child td{border-top:none}
+    tr:hover td{background:#fafafa}
+
+    .token-name{font-weight:700;font-size:13px;color:#111827}
+    .addr{font-family:'Courier New',monospace;font-size:11px;color:#9ca3af;text-decoration:none}
+    .addr:hover{color:#3b82f6}
+    .nav-val{font-weight:700;color:#1d4ed8;font-size:14px}
+    .dim{color:#d1d5db}
+
+    .tag{display:inline-flex;align-items:center;gap:4px;font-size:10px;padding:3px 9px;border-radius:20px;font-weight:600}
+    .t-green{background:#d1fae5;color:#065f46}
+    .t-orange{background:#ffedd5;color:#9a3412}
+    .t-gray{background:#f3f4f6;color:#6b7280}
+    .t-blue{background:#dbeafe;color:#1e40af}
+
+    /* Dot indicator */
+    .dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:5px}
+    .dot-green{background:#10b981}
+    .dot-amber{background:#f59e0b}
+    .dot-gray{background:#d1d5db}
+
+    /* Notice boxes */
+    .notice{margin-top:14px;padding:10px 14px;border-radius:8px;font-size:12px;line-height:1.6;display:flex;gap:10px;align-items:flex-start}
+    .n-amber{background:#fffbeb;border:1px solid #fde68a;color:#78350f}
+    .n-blue{background:#eff6ff;border:1px solid #bfdbfe;color:#1e3a5f}
+    .n-icon{font-size:14px;flex-shrink:0;margin-top:1px}
+
+    .ttl-row td{background:#f8faff;font-weight:700;font-size:13px;border-top:2px solid #e0e7ff!important;padding:12px 10px;color:#1d4ed8}
+
+    .loading{color:#d1d5db;font-size:13px;padding:20px 10px;font-style:italic}
+    .err{color:#ef4444;font-size:12px;padding:12px 10px}
+
+    /* Footer */
+    .footer{margin-top:20px;text-align:center;font-size:11px;color:#d1d5db}
+    a{color:inherit}
+  </style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-left">
+    <h1>PLF Deployment Wallet — Live NAV</h1>
+    <div class="sub">0x4f5D9D62b17e2A5773e28CdF068D211FB5a0cc8C</div>
+  </div>
+  <div class="hdr-right">
+    <div class="ts" id="ts">—</div>
+    <button class="btn" id="btn" onclick="run()">↻ Refresh</button>
+  </div>
+</div>
+
+<!-- Summary cards -->
+<div class="cards">
+  <div class="card">
+    <div class="card-lbl">Total NAV</div>
+    <div class="card-val primary" id="c-total">—</div>
+    <div class="card-sub">Wallet-held positions</div>
+  </div>
+  <div class="card">
+    <div class="card-lbl">Yieldpoint · yUTY</div>
+    <div class="card-val" id="c-yp">—</div>
+    <div class="card-sub" id="c-yp-sub">APY: —</div>
+  </div>
+  <div class="card">
+    <div class="card-lbl">Ample Money · aBUSDC</div>
+    <div class="card-val" id="c-am">—</div>
+    <div class="card-sub" id="c-am-sub">—</div>
+  </div>
+  <div class="card">
+    <div class="card-lbl">InfiniFi</div>
+    <div class="card-val" id="c-inf">—</div>
+    <div class="card-sub" id="c-inf-sub">siUSD + liUSD</div>
+  </div>
+</div>
+
+<!-- Yieldpoint -->
+<div class="sec">
+  <div class="sec-hdr">
+    <span class="sec-ttl">Yieldpoint</span>
+    <span class="chip chip-base">Base</span>
+    <span class="sec-nav" id="yp-nav">—</span>
+  </div>
+  <table>
+    <thead><tr>
+      <th>Token</th><th>Contract</th>
+      <th class="r">Balance</th><th class="r">Rate (USDC/token)</th><th class="r">NAV</th><th>Status</th>
+    </tr></thead>
+    <tbody id="yp-body"><tr><td colspan="6" class="loading">Loading…</td></tr></tbody>
+  </table>
+</div>
+
+<!-- Ample Money -->
+<div class="sec">
+  <div class="sec-hdr">
+    <span class="sec-ttl">Ample Money</span>
+    <span class="chip chip-base">Base</span>
+    <span class="sec-nav" id="am-nav">—</span>
+  </div>
+  <table>
+    <thead><tr>
+      <th>Token</th><th>Contract</th>
+      <th class="r">Balance</th><th class="r">Rate (USDC/token)</th><th class="r">NAV</th><th>Status</th>
+    </tr></thead>
+    <tbody id="am-body"><tr><td colspan="6" class="loading">Loading…</td></tr></tbody>
+  </table>
+  <div id="am-notice"></div>
+</div>
+
+<!-- InfiniFi -->
+<div class="sec">
+  <div class="sec-hdr">
+    <span class="sec-ttl">InfiniFi</span>
+    <span class="chip chip-eth">Ethereum</span>
+    <span class="sec-nav" id="inf-nav">—</span>
+  </div>
+  <table>
+    <thead><tr>
+      <th>Token</th><th>Contract</th>
+      <th class="r">Balance</th><th class="r">Rate (USDC/token)</th><th class="r">NAV</th><th>Status</th>
+    </tr></thead>
+    <tbody id="inf-body"><tr><td colspan="6" class="loading">Loading…</td></tr></tbody>
+  </table>
+  <div id="inf-notice"></div>
+</div>
+
+<div class="footer">Data sourced live from Base and Ethereum mainnet · yUTY rate via Yieldpoint API · liUSD rates via LockingController on-chain</div>
+
+<script>
+'use strict';
+
+const WALLET    = '0x4f5D9D62b17e2A5773e28CdF068D211FB5a0cc8C';
+const BASE_RPCS = ['https://base.publicnode.com','https://base-mainnet.public.blastapi.io','https://base.drpc.org','https://mainnet.base.org'];
+const ETH_RPCS  = ['https://ethereum.publicnode.com','https://rpc.mevblocker.io','https://eth.drpc.org','https://endpoints.omniatech.io/v1/eth/mainnet/public'];
+const YP_API    = 'https://api.yieldpoint.io/v1';
+
+const ADDR = {
+  yUTY    : '0xBa515EEd0119aCB7CFE8fAb3ACD6b362f3ed5319',
+  abUSDC  : '0x1688aEB3Ec7b23A22e2418fdF5BCCc67EcF39c0F',
+  usdcBase: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
+  siUSD   : '0xDBDC1Ef57537E34680B898E1FEBD3D68c7389bCB',
+  liUSD2w : '0xf1839BeCaF586814D022F16cDb3504ff8D8Ff361',
+  liUSD4w : '0x66bCF6151D5558AfB47c38B20663589843156078',
+  liUSD13w: '0xbd3f9814eB946E617f1d774A6762cDbec0bf087A',
+  iUSD    : '0x48f9e38f3070AD8945DFEae3FA70987722E3D89c',
+  usdtEth : '0xdAC17F958D2ee523a2206206994597C13D831ec7',
+};
+
+// Reference rates for fallback (used only when vault is wound down and rate unreadable)
+const REF_RATE = { liUSD13w: 1.207013 };
+
+// InfiniFi Gateway — used to look up LockingController address on-chain
+const GATEWAY = '0x3f04b65Ddbd87f9CE0A2e7Eb24d80e7fb87625b5';
+
+function addrData(a){ return a.toLowerCase().replace('0x','').padStart(64,'0'); }
+function u256Data(n){ return BigInt(n).toString(16).padStart(64,'0'); }
+function decHex(h){ const s=(h||'').replace('0x',''); return (s&&!/^0+$/.test(s))?BigInt('0x'+s.slice(0,64)):0n; }
+
+async function rpcOne(url,to,data){
+  try{
+    const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({jsonrpc:'2.0',method:'eth_call',params:[{to,data:'0x'+data},'latest'],id:Date.now()})});
+    const j=await r.json();
+    if(!j.error&&j.result&&j.result!=='0x') return j.result;
+  }catch(_){}
+  return null;
+}
+async function rpc(rpcs,to,data){
+  for(const url of rpcs){ const r=await rpcOne(url,to,data); if(r) return r; }
+  return '0x'+'0'.repeat(64);
+}
+
+const C = {
+  bal  : (r,a) => rpc(r,a,'70a08231'+addrData(WALLET)).then(decHex),
+  dec  : (r,a) => rpc(r,a,'313ce567').then(decHex),
+  tA   : (r,a) => rpc(r,a,'01e1d114').then(decHex),
+  tS   : (r,a) => rpc(r,a,'18160ddd').then(decHex),
+  cta  : (r,a,s)=> rpc(r,a,'07a2d13a'+u256Data(s)).then(decHex),
+  pay  : (r,a) => rpc(r,a,'bf47e798').then(decHex),
+};
+
+function toU6(raw,dec){ const d=BigInt(dec); return d>=6n?raw/(10n**(d-6n)):raw*(10n**(6n-d)); }
+
+// Look up LockingController address via InfiniFiGatewayV1.getAddress("lockingController")
+// selector: bf40fac1 = keccak4("getAddress(string)")
+async function getLockingController(rpcs){
+  const d='bf40fac1' +
+    '0000000000000000000000000000000000000000000000000000000000000020' +
+    '0000000000000000000000000000000000000000000000000000000000000011' +
+    '6c6f636b696e67436f6e74726f6c6c6572000000000000000000000000000000';
+  const r=await rpc(rpcs,GATEWAY,d);
+  if(!r||/^0x0*$/.test(r)) return null;
+  return '0x'+r.replace(/^0x/,'').slice(-40);
+}
+
+// Call LockingController.exchangeRate(uint32 epochs) → WAD (18-dec) iUSD-per-share rate
+// selector: 10821ff9 = keccak4("exchangeRate(uint32)")
+async function lcRate(rpcs,lcAddr,epochs){
+  if(!lcAddr) return 0n;
+  const d='10821ff9'+epochs.toString(16).padStart(64,'0');
+  return rpc(rpcs,lcAddr,d).then(decHex);
+}
+
+const $    = id => document.getElementById(id);
+const fmtD = v  => '$'+Intl.NumberFormat('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}).format(Number(v)/1e6);
+const fmtN = (r,d)=> Intl.NumberFormat('en-US',{minimumFractionDigits:2,maximumFractionDigits:4}).format(Number(r)/Math.pow(10,Number(d)));
+const fmtR = u6 => '$'+(Number(u6)/1e6).toFixed(6);
+
+function link(addr,chain){
+  const base=chain==='eth'?'https://etherscan.io':'https://basescan.org';
+  return `<a href="${base}/address/${addr}" target="_blank" class="addr">${addr.slice(0,6)}…${addr.slice(-4)}</a>`;
+}
+
+async function vaultRate(rpcs,addr,knownAssetDec){
+  const [sDecRaw,assets,supply]= await Promise.all([C.dec(rpcs,addr),C.tA(rpcs,addr),C.tS(rpcs,addr)]);
+  // Default to 18 if decimals() call fails — prevents convertToAssets(1) rounding to 0
+  const sDec = sDecRaw > 0n ? sDecRaw : 18n;
+  const aDec = knownAssetDec!=null ? BigInt(knownAssetDec) : sDec;
+  const cta  = await C.cta(rpcs,addr,10n**sDec);
+  if(cta>0n)  return {rateU6:toU6(cta,aDec), sDec};
+  if(assets>0n&&supply>0n){
+    const amt=assets*(10n**sDec)/supply;
+    return {rateU6:toU6(amt,aDec), sDec};
+  }
+  return null;
+}
+
+async function run(){
+  const btn=$('btn'); btn.disabled=true; btn.textContent='↻ Loading…';
+  ['yp-body','am-body','inf-body'].forEach(id=>
+    $(id).innerHTML='<tr><td colspan="6" class="loading">Loading…</td></tr>');
+  ['c-total','c-yp','c-am','c-inf','yp-nav','am-nav','inf-nav'].forEach(id=>$(id).textContent='—');
+
+  try{
+    // ── Yieldpoint ─────────────────────────────────────────────────────
+    // Fetch ecosystem stats + vault history (for exact price) in parallel
+    const [ypRaw, ypVault] = await Promise.all([
+      fetch(YP_API).then(r=>r.json()).catch(()=>null),
+      fetch(`${YP_API}/yuty`).then(r=>r.json()).catch(()=>null),
+    ]);
+
+    const [yUTY_bal,yUTY_sDec,yUTY_tSup,yUTY_tA] = await Promise.all([
+      C.bal(BASE_RPCS,ADDR.yUTY), C.dec(BASE_RPCS,ADDR.yUTY),
+      C.tS(BASE_RPCS,ADDR.yUTY),  C.tA(BASE_RPCS,ADDR.yUTY),
+    ]);
+
+    const yUTY_effectiveBal = yUTY_bal;
+
+    // Use /v1/yuty vaultHistory[0].price for exact rate; fall back to on-chain totalAssets/totalSupply
+    const ypApiPrice = ypVault?.vaultHistory?.[0]?.price;
+    let yUTY_rateU6=0n, yUTY_nav6=0n;
+    if(ypApiPrice && ypApiPrice > 0){
+      yUTY_rateU6 = BigInt(Math.round(ypApiPrice * 1e6));
+      yUTY_nav6   = yUTY_effectiveBal * yUTY_rateU6 / (10n**18n);
+    } else if(yUTY_tA>0n&&yUTY_tSup>0n){
+      yUTY_rateU6 = yUTY_tA*1000000n/yUTY_tSup;
+      yUTY_nav6   = yUTY_effectiveBal*yUTY_tA/yUTY_tSup/(10n**12n);
+    } else {
+      const cta=await C.cta(BASE_RPCS,ADDR.yUTY,10n**yUTY_sDec);
+      if(cta>0n){ yUTY_rateU6=toU6(cta,18n); yUTY_nav6=yUTY_effectiveBal*yUTY_rateU6/(10n**yUTY_sDec); }
+    }
+
+    const apy7  = ypRaw?.yuty?.apy   ? ypRaw.yuty.apy.toFixed(2)+'%'   : '—';
+    const apy30 = ypRaw?.yuty?.apy30 ? ypRaw.yuty.apy30.toFixed(2)+'%' : '—';
+
+    // ── Ample Money ─────────────────────────────────────────────────────
+    const [abUSDC_bal,abUSDC_tSup,abUSDC_payout] = await Promise.all([
+      C.bal(BASE_RPCS,ADDR.abUSDC), C.tS(BASE_RPCS,ADDR.abUSDC), C.pay(BASE_RPCS,ADDR.abUSDC),
+    ]);
+    const amVR = await vaultRate(BASE_RPCS,ADDR.abUSDC,6);
+    const abUSDC_sDec   = amVR?.sDec ?? 6n;
+    const abUSDC_rateU6 = amVR?.rateU6 ?? 1000000n;
+    const abUSDC_nav6   = abUSDC_bal*abUSDC_rateU6/(10n**abUSDC_sDec);
+    const abUSDC_share  = abUSDC_tSup>0n?(Number(abUSDC_bal*10000n/abUSDC_tSup)/100).toFixed(2)+'%':'—';
+
+    // ── InfiniFi ─────────────────────────────────────────────────────────
+    const [siUSD_bal,iUSD_dec_raw] = await Promise.all([
+      C.bal(ETH_RPCS,ADDR.siUSD), C.dec(ETH_RPCS,ADDR.iUSD),
+    ]);
+    const iUSD_DEC = iUSD_dec_raw>0n ? iUSD_dec_raw : 18n;
+
+    const siVR = await vaultRate(ETH_RPCS,ADDR.siUSD,Number(iUSD_DEC));
+    const siUSD_sDec   = siVR?.sDec ?? 18n;
+    const siUSD_rateU6 = siVR?.rateU6 ?? 1000000n;
+    const siUSD_nav6   = siUSD_bal*siUSD_rateU6/(10n**siUSD_sDec);
+
+    const [li2w_bal,li4w_bal,li13w_bal,iUSD_bal] = await Promise.all([
+      C.bal(ETH_RPCS,ADDR.liUSD2w), C.bal(ETH_RPCS,ADDR.liUSD4w),
+      C.bal(ETH_RPCS,ADDR.liUSD13w), C.bal(ETH_RPCS,ADDR.iUSD),
+    ]);
+
+    // liUSD tokens are plain ERC-20 (LockedPositionToken), not ERC-4626.
+    // Discover LockingController via Gateway.getAddress("lockingController"), then
+    // call exchangeRate(epochs) → WAD (18-dec) iUSD-per-share ratio.
+    const lcAddr = await getLockingController(ETH_RPCS);
+    const [lc_rate_2w,lc_rate_4w,lc_rate_13w] = await Promise.all([
+      lcRate(ETH_RPCS,lcAddr,2), lcRate(ETH_RPCS,lcAddr,4), lcRate(ETH_RPCS,lcAddr,13),
+    ]);
+    const LI_SDEC = 18n; // LockedPositionToken always has 18 decimals
+
+    // liUSD-2w
+    let li2w_rateU6  = lc_rate_2w>0n ? toU6(lc_rate_2w,18n) : 0n;
+    let li2w_rateNote= '';
+    if(li2w_bal>0n && li2w_rateU6===0n){ li2w_rateU6=1000000n; li2w_rateNote=' (face)'; }
+    const li2w_nav6  = li2w_bal>0n ? li2w_bal*li2w_rateU6/(10n**LI_SDEC) : 0n;
+
+    // liUSD-4w
+    let li4w_rateU6  = lc_rate_4w>0n ? toU6(lc_rate_4w,18n) : 0n;
+    let li4w_rateNote= '';
+    if(li4w_bal>0n && li4w_rateU6===0n){ li4w_rateU6=1000000n; li4w_rateNote=' (face)'; }
+    const li4w_nav6  = li4w_bal>0n ? li4w_bal*li4w_rateU6/(10n**LI_SDEC) : 0n;
+
+    // liUSD-13w
+    let li13w_rateU6 = lc_rate_13w>0n ? toU6(lc_rate_13w,18n) : 0n;
+    if(li13w_rateU6===0n) li13w_rateU6=BigInt(Math.round(REF_RATE.liUSD13w*1e6));
+    const li13w_nav6 = li13w_bal>0n ? li13w_bal*li13w_rateU6/(10n**LI_SDEC) : 0n;
+
+    const iUSD_nav6    = toU6(iUSD_bal,iUSD_DEC);
+    const inf_nav6     = siUSD_nav6+li2w_nav6+li4w_nav6+li13w_nav6+iUSD_nav6;
+
+    // ── Stablecoins (included in total) ──────────────────────────────────
+    const [usdcBase_bal,usdtEth_bal] = await Promise.all([
+      C.bal(BASE_RPCS,ADDR.usdcBase), C.bal(ETH_RPCS,ADDR.usdtEth),
+    ]);
+    const stbl_nav6 = toU6(usdcBase_bal,6n)+toU6(usdtEth_bal,6n);
+
+    const total_nav6 = yUTY_nav6+abUSDC_nav6+inf_nav6+stbl_nav6;
+
+    // ── Update cards ─────────────────────────────────────────────────────
+    $('c-total').textContent = fmtD(total_nav6);
+    $('c-yp').textContent    = fmtD(yUTY_nav6);
+    $('c-yp-sub').textContent= `7d APY: ${apy7} · 30d: ${apy30}`;
+    $('c-am').textContent    = fmtD(abUSDC_nav6);
+    $('c-am-sub').textContent= `${abUSDC_share} of pool`;
+    $('c-inf').textContent   = fmtD(inf_nav6);
+    const midUnlocking = [li2w_bal===0n, li4w_bal===0n, li13w_bal===0n].filter(Boolean).length;
+    $('c-inf-sub').textContent= midUnlocking>0?`${midUnlocking} position(s) mid-unlock`:'siUSD + liUSD-2w/4w/13w';
+    $('yp-nav').textContent  = fmtD(yUTY_nav6);
+    $('am-nav').textContent  = fmtD(abUSDC_nav6);
+    $('inf-nav').textContent = fmtD(inf_nav6);
+
+    // ── Yieldpoint table ─────────────────────────────────────────────────
+    const yUTY_balNote = yUTY_effectiveBal > yUTY_bal
+      ? '<br><span style="font-size:10px;color:#9ca3af">incl. queued redemptions</span>' : '';
+    $('yp-body').innerHTML = `<tr>
+      <td><span class="token-name">yUTY</span></td>
+      <td>${link(ADDR.yUTY,'base')}</td>
+      <td class="r">${fmtN(yUTY_effectiveBal,yUTY_sDec)}${yUTY_balNote}</td>
+      <td class="r">${fmtR(yUTY_rateU6)}</td>
+      <td class="r nav-val">${fmtD(yUTY_nav6)}</td>
+      <td><span class="tag t-green"><span class="dot dot-green"></span>Active</span></td>
+    </tr>`;
+
+    // ── Ample Money table ─────────────────────────────────────────────────
+    $('am-body').innerHTML = `<tr>
+      <td><span class="token-name">aBUSDC</span></td>
+      <td>${link(ADDR.abUSDC,'base')}</td>
+      <td class="r">${fmtN(abUSDC_bal,abUSDC_sDec)}</td>
+      <td class="r">${fmtR(abUSDC_rateU6)}</td>
+      <td class="r nav-val">${fmtD(abUSDC_nav6)}</td>
+      <td><span class="tag t-green"><span class="dot dot-green"></span>Active</span></td>
+    </tr>`;
+    const payoutUSD=Number(abUSDC_payout)/1e6;
+    $('am-notice').innerHTML = payoutUSD>0
+      ? `<div class="notice n-amber"><span class="n-icon">⚡</span>
+          <span>Active prize pool: <strong>$${payoutUSD.toLocaleString('en-US',{minimumFractionDigits:2})}</strong>
+          — this wallet holds <strong>${abUSDC_share}</strong> of deposits.
+          Check unclaimed prizes at <a href="https://app.ample.money" target="_blank" style="color:#92400e;font-weight:600;text-decoration:underline">app.ample.money</a>.</span></div>`
+      : `<div class="notice n-blue"><span class="n-icon">ℹ️</span>
+          <span>No active prize pool this cycle. Check past unclaimed prizes at <a href="https://app.ample.money" target="_blank" style="font-weight:600">app.ample.money</a>.</span></div>`;
+
+    // ── InfiniFi table ────────────────────────────────────────────────────
+    function infRow(lbl,addr,bal,sDec,rateU6,nav6,tag,tagCls,dotCls,rateNote=''){
+      const has=bal>0n;
+      const rateStr=rateU6>0n
+        ?fmtR(rateU6)+(rateNote?`<span style="font-size:10px;color:#9ca3af">${rateNote}</span>`:'')
+        :'<span class="dim">—</span>';
+      return `<tr>
+        <td><span class="token-name">${lbl}</span></td>
+        <td>${link(addr,'eth')}</td>
+        <td class="r ${has?'':'dim'}">${has?fmtN(bal,sDec):'0.00'}</td>
+        <td class="r">${rateStr}</td>
+        <td class="r ${has?'nav-val':'dim'}">${has?fmtD(nav6):'—'}</td>
+        <td><span class="tag ${tagCls}"><span class="dot ${dotCls}"></span>${tag}</span></td>
+      </tr>`;
+    }
+
+    function liStatus(bal,rateU6){
+      if(bal>0n) return ['Locked','t-blue','dot-green'];
+      if(rateU6===0n) return ['Mid-Unlock','t-orange','dot-amber'];
+      return ['Matured','t-gray','dot-gray'];
+    }
+
+    let infRows='';
+    infRows += infRow('siUSD',    ADDR.siUSD,   siUSD_bal, siUSD_sDec, siUSD_rateU6, siUSD_nav6,
+      siUSD_bal>0n?'Staked':'Not in wallet', siUSD_bal>0n?'t-green':'t-gray', siUSD_bal>0n?'dot-green':'dot-gray');
+    const [li2w_tag,li2w_cls,li2w_dot]=liStatus(li2w_bal,li2w_rateU6);
+    infRows += infRow('liUSD-2w', ADDR.liUSD2w, li2w_bal,  LI_SDEC,    li2w_rateU6,  li2w_nav6,  li2w_tag, li2w_cls, li2w_dot, li2w_rateNote);
+    const [li4w_tag,li4w_cls,li4w_dot]=liStatus(li4w_bal,li4w_rateU6);
+    infRows += infRow('liUSD-4w', ADDR.liUSD4w, li4w_bal,  LI_SDEC,    li4w_rateU6,  li4w_nav6,  li4w_tag, li4w_cls, li4w_dot, li4w_rateNote);
+    const [li13_tag,li13_cls,li13_dot]=liStatus(li13w_bal,li13w_rateU6);
+    infRows += infRow('liUSD-13w',ADDR.liUSD13w,li13w_bal, LI_SDEC,    li13w_rateU6, li13w_nav6, li13_tag, li13_cls, li13_dot);
+    if(iUSD_bal>0n)
+      infRows += infRow('iUSD',   ADDR.iUSD,    iUSD_bal,  iUSD_DEC,   1000000n,     iUSD_nav6,
+        'Redeemable','t-green','dot-green');
+    infRows += `<tr class="ttl-row">
+      <td colspan="4">InfiniFi Total (wallet-held)</td>
+      <td class="r">${fmtD(inf_nav6)}</td><td></td>
+    </tr>`;
+    $('inf-body').innerHTML = infRows;
+
+    const notices=[];
+    if(siUSD_bal===0n)
+      notices.push(`<div class="notice n-blue"><span class="n-icon">ℹ️</span>
+        <span><strong>siUSD:</strong> No balance detected in wallet.</span></div>`);
+    const midUnlockPositions=[];
+    if(li2w_bal===0n) midUnlockPositions.push('liUSD-2w');
+    if(li4w_bal===0n) midUnlockPositions.push('liUSD-4w');
+    if(li13w_bal===0n) midUnlockPositions.push('liUSD-13w');
+    if(midUnlockPositions.length>0)
+      notices.push(`<div class="notice n-amber"><span class="n-icon">⚠️</span>
+        <span><strong>${midUnlockPositions.join(', ')} mid-unlock:</strong> Position(s) held in InfiniFi's UnwindingModule — not in wallet balance. Pending redemption value not included in NAV above. Check at
+        <a href="https://app.infinifi.xyz" target="_blank" style="color:#92400e;font-weight:600;text-decoration:underline">app.infinifi.xyz → Positions → Unlocking</a>.</span></div>`);
+    $('inf-notice').innerHTML=notices.join('');
+
+    // ── Timestamp ─────────────────────────────────────────────────────────
+    const now=new Date();
+    $('ts').innerHTML=`Updated ${now.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}<br>${now.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit'})}`;
+
+  }catch(e){
+    ['yp-body','am-body','inf-body'].forEach(id=>
+      $(id).innerHTML=`<tr><td colspan="6" class="err">Error: ${e.message}</td></tr>`);
+  }
+
+  btn.disabled=false; btn.textContent='↻ Refresh';
+}
+
+run();
+</script>
+</body>
+</html>
